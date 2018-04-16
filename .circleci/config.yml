@@ -10,5 +10,5 @@ jobs:
       - setup_remote_docker
       - run:
           name: Build Docker Image
-          command: |
-            make builder
+          command: docker build -t titusoss/titus-executor-builder hack/builder
+          
