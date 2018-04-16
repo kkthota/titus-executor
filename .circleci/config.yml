@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: ubuntu:xenial
+      - image: circleci/buildpack-deps:xenial-scm-dind
     environment:
       - SHORT_CIRCUIT_QUITELITE: true
     steps:
