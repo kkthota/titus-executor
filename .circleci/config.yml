@@ -1,7 +1,6 @@
 version: 2
 jobs:
-  build:
-    working_directory: /app
+  builder:
     docker:
       - image: docker:17.05.0-ce-git
     resource_class: xlarge
@@ -11,3 +10,11 @@ jobs:
       - run:
           name: Build Docker Image
           command: docker build -t titusoss/titus-executor-builder hack/builder
+  test:
+    docker:
+      - image: circleci/1.10.1-stretch
+    resource_class: xlarge
+    steps:
+      - checkout
+      - make test-standalone
+
