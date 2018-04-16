@@ -15,7 +15,6 @@ jobs:
       - image: circleci/golang:1.10.1-stretch
     environment:
       GOPATH: /go
-      PATH: /go/bin:$PATH
     resource_class: xlarge
     working_directory: /go/src/github.com/Netflix/titus-executor
     steps:
@@ -23,6 +22,7 @@ jobs:
       - run:
           name: Run tests, and vet
           command: |
+            export PATH=/go/bin:${PATH}
             make test-local
             make validate
 
