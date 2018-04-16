@@ -10,5 +10,5 @@ jobs:
       - setup_remote_docker
       - run:
           name: Build Docker Image
-          command:
+          command: |
             make builder
