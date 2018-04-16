@@ -1,15 +1,14 @@
 version: 2
 jobs:
   build:
+    working_directory: /app
     docker:
-      - image: circleci/buildpack-deps:xenial-scm-dind
-    environment:
-      - SHORT_CIRCUIT_QUITELITE: true
+      - image: docker:17.05.0-ce-git
+    resource_class: xlarge
     steps:
       - checkout
-      - setup_remote_docker:
-          docker_layer_caching: true
+      - setup_remote_docker
       - run:
-          name: Build Docker Builder Image"
-          command: |
+          name: Build Docker Image
+          command:
             make builder
