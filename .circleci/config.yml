@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: /app
     docker:
-      - image: circleci/buildpack-deps:xenial-scm-dind
+      - image: docker:17.05.0-ce-git
     resource_class: xlarge
     steps:
       - checkout
@@ -11,4 +11,3 @@ jobs:
       - run:
           name: Build Docker Image
           command: docker build -t titusoss/titus-executor-builder hack/builder
-          
