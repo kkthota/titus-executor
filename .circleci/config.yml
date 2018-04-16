@@ -14,7 +14,9 @@ jobs:
     docker:
       - image: circleci/1.10.1-stretch
     resource_class: xlarge
+    working_directory: /go/src/github.com/Netflix/titus-executor
     steps:
       - checkout
-      - make test-standalone
-
+      - run: |
+          make test-standalone
+          make validate
