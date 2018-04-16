@@ -9,6 +9,9 @@ jobs:
       - checkout
       - setup_remote_docker
       - run:
+          name: Install dependencies
+          command: apt-get install -y build-essentials
+      - run:
           name: Build Docker Image
           command:
             make builder
