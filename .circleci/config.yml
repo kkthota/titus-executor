@@ -20,7 +20,7 @@ jobs:
       - run:
           name: Run tests, and vet
           command: |
-            make test-standalone
+            make test-local
             make validate
 
 workflows:
