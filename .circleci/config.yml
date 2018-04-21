@@ -90,9 +90,9 @@ workflows:
     jobs:
       - builder
       - ci-builder
-      - build:
-          requires:
-           - builder
+      - build
+#          requires:
+#           - builder
       - test-local:
           requires:
             - ci-builder
