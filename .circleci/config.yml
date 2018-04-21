@@ -34,6 +34,15 @@ jobs:
       - run:
           name: Push builder image
           command: docker push titusoss/titus-ci-builder
+  test-local:
+    docker:
+      - image: titusoss/titus-ci-builder
+    resource_class: xlarge
+    working_directory: /go/src/github.com/Netflix/titus-executor
+    steps:
+      - run:
+          name: Local tests
+          command: make test-local
   build:
     docker:
       - image: titusoss/titus-ci-builder
@@ -44,6 +53,7 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
+          name: Run build
           command: make --debug build
           
 #  test:
@@ -71,3 +81,7 @@ workflows:
       - build:
           requires:
            - ci-builder
+           - builder
+      - test-local:
+          requires:
+            - ci-builder
