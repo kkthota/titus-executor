@@ -1656,7 +1656,8 @@ stopped:
 
 // Cleanup runs the registered callbacks for a container
 func (r *DockerRuntime) Cleanup(c *runtimeTypes.Container) error {
-	errs := []error{}
+	var errs *multierror.Error
+
 	cro := types.ContainerRemoveOptions{
 		RemoveVolumes: true,
 		RemoveLinks:   false,
@@ -1666,16 +1667,12 @@ func (r *DockerRuntime) Cleanup(c *runtimeTypes.Container) error {
 	if err := r.client.ContainerRemove(context.TODO(), c.ID, cro); err != nil {
 		r.metrics.Counter("titus.executor.dockerRemoveContainerError", 1, nil)
 		log.Errorf("Failed to remove container '%s' with ID: %s: %v", c.TaskID, c.ID, err)
-		errs = append(errs, err)
+		errs = multierror.Append(errs, err)
 	}
 
-	errs = append(errs, c.RuntimeCleanup()...)
+	errs = multierror.Append(errs, c.RuntimeCleanup()...)
 
-	if len(errs) > 0 {
-		return &compositeError{errs}
-	}
-
-	return nil
+	return errs.ErrorOrNil()
 }
 
 // reportDockerImageSizeMetric reports a metric that represents the container image's size
