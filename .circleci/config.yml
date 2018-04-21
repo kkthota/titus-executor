@@ -19,7 +19,7 @@ jobs:
           command: docker push titusoss/titus-executor-builder
   build:
     docker:
-      - image: circleci/golang:1.10.1
+      - image: golang:1.10.1-stretch
     resource_class: xlarge
     working_directory: /go/src/github.com/Netflix/titus-executor
     environment:
@@ -29,7 +29,7 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
-          command: make build
+          command: make --debug build
           
 #  test:
 #    docker:
