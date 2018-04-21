@@ -45,28 +45,15 @@ jobs:
           name: Local tests
           command: make test-local
   build:
-    machine:
-      enabled: true
-      docker_layer_caching: true
+    docker:
+      - image: titusoss/titus-ci-builder
     resource_class: xlarge
     working_directory: /go/src/github.com/Netflix/titus-executor
-    environment:
-      - DEBIAN_FRONTEND: "noninteractive"
     steps:
       - checkout
       - run:
           name: Run build
-          command: |
-            apt-get update
-            apt-get install -y wget build-essential docker-ce ruby ruby-dev ruby-bundler gcc g++ make pkg-config curl
-            wget -O go.tar.gz https://dl.google.com/go/go1.10.1.linux-amd64.tar.gz
-            tar -C /usr/local -xzf go.tar.gz
-            export PATH=$PATH:/usr/local/go/bin
-            export GOPATH=/go
-            go get -u github.com/alecthomas/gometalinter
-            gometalinter --install
-            go get -u github.com/kardianos/govendor
-            make --debug build
+          command: make --debug build
           
 #  test:
 #    docker:
@@ -90,9 +77,10 @@ workflows:
     jobs:
       - builder
       - ci-builder
-      - build
-#          requires:
-#           - builder
+      - build: 
+          requires:
+            - builder
+            - ci-builder
       - test-local:
           requires:
             - ci-builder
