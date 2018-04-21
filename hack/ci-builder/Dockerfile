@@ -2,10 +2,7 @@ FROM circleci/buildpack-deps:xenial-scm-dind
 
 
 RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -y apt-transport-https ca-certificates curl software-properties-common && apt-get clean
-COPY docker-repo.gpg /tmp
-RUN apt-key add /tmp/docker-repo.gpg
-RUN add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -y wget build-essential docker-ce ruby ruby-dev ruby-bundler gcc g++ make pkg-config && apt-get clean
+RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -y wget build-essential ruby ruby-dev ruby-bundler gcc g++ make pkg-config && apt-get clean
 ENV GOLANG_VERSION 1.10.1
 
 RUN set -eux; \
