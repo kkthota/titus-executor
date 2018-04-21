@@ -21,10 +21,13 @@ jobs:
           name: Push builder image
           command: docker push titusoss/titus-executor-builder
   build:
-    machine: true
+    docker:
+      - image: titusoss/titus-executor-builder
     resource_class: xlarge
     steps:
       - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
       - run:
           command: make build
           
