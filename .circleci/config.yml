@@ -1,34 +1,41 @@
 version: 2
 jobs:
-#  builder:
-#    docker:
-#      - image: docker:17.05.0-ce-git
-#    resource_class: xlarge
-#    steps:
-#      - checkout
-#      - setup_remote_docker
-#      - run:
-#          name: Build Docker Image
-#          command: docker build -t titusoss/titus-executor-builder hack/builder
-  test:
+  builder:
     docker:
-      - image: circleci/golang:1.10.1-stretch
-    environment:
-      GOPATH: /go
+      - image: docker:17.05.0-ce-git
     resource_class: xlarge
-    working_directory: /go/src/github.com/Netflix/titus-executor
     steps:
       - checkout
+      - setup_remote_docker
       - run:
-          name: Run tests, and vet
-          command: |
-            export PATH=/go/bin:${PATH}
-            make test-local
-            make validate
+          name: Login into Docker hub
+          command: docker login -u $DOCKER_USER -p $DOCKER_PASS
+      - run:
+          name: Build builder image
+          command: docker build -t titusoss/titus-executor-builder hack/builder
+      - run:
+          name: Push builder image
+          command: docker push titusoss/titus-executor-builder
+
+#  test:
+#    docker:
+#      - image: circleci/golang:1.10.1-stretch
+#    environment:
+#      GOPATH: /go
+#    resource_class: xlarge
+#    working_directory: /go/src/github.com/Netflix/titus-executor
+#    steps:
+#      - checkout
+#      - run:
+#          name: Run tests, and vet
+#          command: |
+#            export PATH=/go/bin:${PATH}
+#            make test-local
+#            make validate
 
 workflows:
   version: 2
   build_and_test:
     jobs:
-#      - builder
-      - test
+      - builder
+#      - test
