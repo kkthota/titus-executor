@@ -20,7 +20,14 @@ jobs:
       - run:
           name: Push builder image
           command: docker push titusoss/titus-executor-builder
-
+  build:
+    machine: true
+    resource_class: xlarge
+    steps:
+      - checkout
+      - run:
+          command: make build
+          
 #  test:
 #    docker:
 #      - image: circleci/golang:1.10.1-stretch
@@ -42,4 +49,6 @@ workflows:
   build_and_test:
     jobs:
       - builder
-#      - test
+      - build:
+          requires:
+            - builder
