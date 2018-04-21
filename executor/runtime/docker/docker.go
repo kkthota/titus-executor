@@ -190,23 +190,16 @@ type ucred struct {
 
 // DockerRuntime implements the Runtime interface calling Docker Engine APIs
 type DockerRuntime struct { // nolint: golint
-	metrics           metrics.Reporter
-	registryAuthCfg   *types.AuthConfig
-	client            *docker.Client
-	awsRegion         string
-	tiniSocketDir     string
-	tiniEnabled       bool
-	storageOptEnabled bool
-	pidCgroupPath     string
-	cfg               config.Config
-}
-
-type compositeError struct {
-	errors []error
-}
-
-func (e *compositeError) Error() string {
-	return fmt.Sprintf("%#v", e.errors)
+	metrics                       metrics.Reporter
+	registryAuthCfg               *types.AuthConfig
+	client                        *docker.Client
+	awsRegion                     string
+	tiniSocketDir                 string
+	tiniEnabled                   bool
+	storageOptEnabled             bool
+	pidCgroupPath                 string
+	cfg                           config.Config
+	nestedContainerSeccompProfile []byte
 }
 
 // NewDockerRuntime provides a Runtime implementation on Docker
@@ -236,8 +229,14 @@ func NewDockerRuntime(executorCtx context.Context, m metrics.Reporter, cfg confi
 		return nil, err
 	}
 
+	// TODO: Check
 	dockerRuntime.awsRegion = os.Getenv("EC2_REGION")
 
+	dockerRuntime.nestedContainerSeccompProfile, err = ioutil.ReadFile("/etc/titus-executor/nested-container.json")
+	if err != nil {
+		log.Error("Could not read nested container seccomp profile: ", err)
+		return nil, err
+	}
 	err = setupLoggingInfra(dockerRuntime)
 	if err != nil {
 		return nil, err
@@ -408,6 +407,7 @@ func (r *DockerRuntime) dockerConfig(c *runtimeTypes.Container, binds []string, 
 		Hostname:   hostname,
 	}
 
+	useInit := true
 	hostCfg := &container.HostConfig{
 		AutoRemove: false,
 		Privileged: false,
@@ -419,6 +419,7 @@ func (r *DockerRuntime) dockerConfig(c *runtimeTypes.Container, binds []string, 
 			"net.ipv6.conf.default.disable_ipv6": "0",
 			"net.ipv6.conf.lo.disable_ipv6":      "0",
 		},
+		Init: &useInit,
 	}
 	hostCfg.CgroupParent = r.pidCgroupPath
 	c.RegisterRuntimeCleanup(func() error {
@@ -527,15 +528,29 @@ func netflixLoggerTempDir(cfg config.Config, c *runtimeTypes.Container) string {
 }
 
 func (r *DockerRuntime) setupAdditionalCapabilities(c *runtimeTypes.Container, hostCfg *container.HostConfig) {
+	addedCapabilities := make(map[string]struct{})
+
 	// Set any additional capabilities for this container
 	if cap := c.TitusInfo.GetCapabilities(); cap != nil {
 		for _, add := range cap.GetAdd() {
+			addedCapabilities[add.String()] = struct{}{}
 			hostCfg.CapAdd = append(hostCfg.CapAdd, add.String())
 		}
 		for _, drop := range cap.GetDrop() {
 			hostCfg.CapDrop = append(hostCfg.CapDrop, drop.String())
 		}
 	}
+
+	// Privileged containers automaticaly deactivate seccomp and friends, no need to do this
+	if c.TitusInfo.GetAllowNestedContainers() && !r.cfg.PrivilegedContainersEnabled {
+		hostCfg.SecurityOpt = append(hostCfg.SecurityOpt, "apparmor:docker-nested")
+		hostCfg.SecurityOpt = append(hostCfg.SecurityOpt, fmt.Sprintf("seccomp=%s", string(r.nestedContainerSeccompProfile)))
+
+		if _, ok := addedCapabilities["SYS_ADMIN"]; !ok {
+			hostCfg.CapAdd = append(hostCfg.CapAdd, "SYS_ADMIN")
+		}
+	}
+
 }
 
 func sleepWithCtx(parentCtx context.Context, d time.Duration) error {
@@ -1344,6 +1359,10 @@ func (r *DockerRuntime) setupPostStartLogDirTiniHandleConnection2(parentCtx cont
 		}
 	}
 
+	if err := setupContainerNesting(parentCtx, c, cred); err != nil {
+		log.Error("Unable to setup container nesting: ", err)
+		return err
+	}
 	/* This can be "broken" if the titus-executor crashes. The link will be dangling, and point to a
 	 * /proc/${PID}/fd/${FD}. It's not "bad", because Titus Task names should be unique
 	 */
