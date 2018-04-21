@@ -40,6 +40,7 @@ jobs:
     resource_class: xlarge
     working_directory: /go/src/github.com/Netflix/titus-executor
     steps:
+      - checkout
       - run:
           name: Local tests
           command: make test-local
