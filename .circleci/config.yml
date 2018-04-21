@@ -21,9 +21,9 @@ jobs:
     docker:
       - image: circleci/golang:1.10.1
     resource_class: xlarge
-    working_directory: /root/go/src/github.com/Netflix/titus-executor
+    working_directory: /go/src/github.com/Netflix/titus-executor
     environment:
-      GOPATH: /root/go
+      GOPATH: /go
     steps:
       - checkout
       - setup_remote_docker:
