@@ -17,13 +17,28 @@ jobs:
       - run:
           name: Push builder image
           command: docker push titusoss/titus-executor-builder
+  ci-builder:
+    docker:
+      - image: docker:17.05.0-ce-git
+    resource_class: xlarge
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Login into Docker hub
+          command: docker login -u $DOCKER_USER -p $DOCKER_PASS
+      - run:
+          name: Build builder image
+          command: docker build -t titusoss/titus-ci-builder hack/ci-builder
+      - run:
+          name: Push builder image
+          command: docker push titusoss/titus-ci-builder
   build:
     docker:
-      - image: titusoss/titus-executor-builder
+      - image: titusoss/titus-ci-builder
     resource_class: xlarge
     working_directory: /go/src/github.com/Netflix/titus-executor
-    environment:
-      GOPATH: /go
     steps:
       - checkout
       - setup_remote_docker:
@@ -52,7 +67,7 @@ workflows:
   build_and_test:
     jobs:
       - builder
-      - build
- #     - build:
- #         requires:
-#            - builder
+      - ci-builder
+      - build:
+          requires:
+           - ci-builder
