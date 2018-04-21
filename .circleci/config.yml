@@ -12,9 +12,6 @@ jobs:
           name: Login into Docker hub
           command: docker login -u $DOCKER_USER -p $DOCKER_PASS
       - run:
-          name: Pull old image
-          command: docker pull titusoss/titus-executor-builder
-      - run:
           name: Build builder image
           command: docker build -t titusoss/titus-executor-builder hack/builder
       - run:
@@ -52,6 +49,7 @@ workflows:
   build_and_test:
     jobs:
       - builder
-      - build:
-          requires:
-            - builder
+      - build
+ #     - build:
+ #         requires:
+#            - builder
